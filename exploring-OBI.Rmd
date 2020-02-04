@@ -6,13 +6,16 @@ output: html_document
 ---
 
 
-Let's explore the Union Budget allocation for the Ministry of Environment, Forests and Climate Change for the year 2020-21
+## Exploring the Union Budget allocation for the Ministry of Environment, Forests and Climate Change** for the year 2020-21
 
-```{r load-libraries}
-library(ckanr)
-library(stringr)
-library(dplyr)
+```{r Load Libraries, echo=FALSE, warning=TRUE}
+packages_required <- c("ckanr","stringr","dplyr","DT","listviewer","ggplot2","ggalt")
+lapply(packages_required, require, character.only=TRUE)
 ```
+
+The objective of this notebook is to demonstrate the exploration of the [OpenBudgetsIndia](openbudgetsindia.org/) (OBI) platform right from our favourite programming environment. 
+
+We will use the [ckanr](https://github.com/ropensci/ckanr) package developed by the amazing folks at [ROpenSci](https://ropensci.org/). This is used to read and update data from [CKAN](https://ckan.org/) instanes. Since, OBI is yet another CkAN instance, this packages works perfectly to read and explore (and write as well) data from and to the [Open Budgets India](openbudgetsindia.org/) platform. 
 
 ```{r ckan-setup}
 org_url <- "https://openbudgetsindia.org/"
@@ -53,7 +56,10 @@ print(format_details)
 ```{r get data from resource}
 # Get data from CSV
 res_id <- format_details$id[format_details$format == 'CSV']
-budget_data <- dplyr::tbl(src = org_connect$con, from = res_id) %>% as_tibble(.)
+# budget_data <- dplyr::tbl(src = org_connect$con, from = res_id) %>% as_tibble(.)
+
+# data.table::fwrite(budget_data,file = "data/ministry-of-environment-forests-and-climate-change-2020.csv")
+budget_data <- readr::read_csv("data/ministry-of-environment-forests-and-climate-change-2020.csv")
 
 # Get column names
 names(budget_data)
@@ -81,10 +87,78 @@ data_for_analysis$Particulars <- stringr::str_trim(data_for_analysis$Particulars
 data_for_analysis <- data_for_analysis[!data_for_analysis$Particulars %in% c('Grand Total'),]
 
 # Add new column for the difference in budget from 2018-19 to 2021-21
-data_for_analysis$budget_diff <- data_for_analysis$`Budget 2020-2021 Total` - data_for_analysis$`Actual 2018-2019 Total`
+data_for_analysis$`Budget Difference` <- data_for_analysis$`Budget 2020-2021 Total` - data_for_analysis$`Actual 2018-2019 Total`
 ```
+
+```{r Table for exploration}
+DT::datatable(data.table::data.table(data_for_analysis), rownames = FALSE,
+    options = list(
+      DT::
+      searching=TRUE, 
+      lengthChange=FALSE, 
+      ordering=FALSE, 
+      autoWidth=TRUE, 
+      bPaginate=TRUE, 
+      bInfo=TRUE, 
+      paging=TRUE
+    ))
+```
+
+
+Let's check how the allocation has changed from 2018-19 to 2020-21. 
 
 ```{r Analysis - Compare the actuals from 2018-19, to the planned budget for 2020-21}
-
+top_20_gain <- data_for_analysis %>% arrange(`Budget Difference`) %>% tail(20)
+bottom_20_loss <- data_for_analysis %>% arrange(`Budget Difference`) %>% head(20) 
 ```
 
+
+```{r Graph for top 20 - Gain}
+graph_for_analysis <- top_20_gain
+graph_for_analysis$Particulars <- factor(graph_for_analysis$Particulars, levels = graph_for_analysis$Particulars)
+top_20 <- ggplot(graph_for_analysis, aes(x=`Actual 2018-2019 Total`, xend=`Budget 2020-2021 Total`, y=Particulars, group=Particulars)) + 
+        geom_dumbbell(color="#0e668b", 
+                      size=0.75, 
+                      point.colour.l="#0e668b") + 
+        scale_x_continuous() + 
+        labs(x=NULL, 
+             y=NULL, 
+             title="Budget Allocation (In Crores): 2018/19 vs 2020/21", 
+             subtitle="Top 20 departments in terms of increase in budget allocation", 
+             caption="Source: OpenBudgetsIndia") +
+        theme(plot.title = element_text(hjust=0.5, face="bold"),
+              plot.background=element_rect(fill="#f7f7f7"),
+              panel.background=element_rect(fill="#f7f7f7"),
+              panel.grid.minor=element_blank(),
+              panel.grid.major.y=element_blank(),
+              panel.grid.major.x=element_line(),
+              axis.ticks=element_blank(),
+              legend.position="top",
+              panel.border=element_blank())
+top_20
+```
+
+```{r Graph for bottom 20 - Loss}
+graph_for_analysis <- bottom_20_loss
+graph_for_analysis$Particulars <- factor(graph_for_analysis$Particulars, levels = graph_for_analysis$Particulars)
+bottom_20 <- ggplot(graph_for_analysis, aes(x=`Actual 2018-2019 Total`, xend=`Budget 2020-2021 Total`, y=Particulars, group=Particulars)) + 
+        geom_dumbbell(color="#0e668b", 
+                      size=0.75, 
+                      point.colour.l="#0e668b") + 
+        scale_x_continuous() + 
+        labs(x=NULL, 
+             y=NULL, 
+             title="Budget Allocation (In Crores): 2018/19 vs 2020/21", 
+             subtitle="Bottom 20 departments in terms of increase in budget allocation", 
+             caption="Source: OpenBudgetsIndia") +
+        theme(plot.title = element_text(hjust=0.5, face="bold"),
+              plot.background=element_rect(fill="#f7f7f7"),
+              panel.background=element_rect(fill="#f7f7f7"),
+              panel.grid.minor=element_blank(),
+              panel.grid.major.y=element_blank(),
+              panel.grid.major.x=element_line(),
+              axis.ticks=element_blank(),
+              legend.position="top",
+              panel.border=element_blank())
+bottom_20
+```
