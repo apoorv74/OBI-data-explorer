@@ -15,7 +15,9 @@ library(dplyr)
 ```
 
 ```{r ckan-setup}
-ckanr::ckanr_setup(url = "https://openbudgetsindia.org/")
+org_url <- "https://openbudgetsindia.org/"
+ckanr::ckanr_setup(url = org_url)
+org_connect <- ckanr::src_ckan(url = org_url)
 
 ## Check connection
 ckanr::ckan_version()
@@ -31,5 +33,46 @@ ministry_details$description[[1]] %>% stringr::str_to_sentence() %>% cat()
 
 ```{r explore datasets in an org}
 all_datasets <- purrr::map(ministry_details$packages,'title') %>% unlist()
+```
+
+```{r fetch package details}
+
+# Get the package ID
+data_2020_id <- ministry_details$packages[[1]]$id
+pacakage_details <- package_show(data_2020_id)
+
+# Explore package
+# listviewer::jsonedit(pacakage_details)
+
+# Get data formats
+format_details <- purrr::map_df(pacakage_details$resources,`[`,c('format','id'))
+
+print(format_details)
+```
+
+```{r get data from resource}
+# Get data from CSV
+res_id <- format_details$id[format_details$format == 'CSV']
+budget_data <- dplyr::tbl(src = org_connect$con, from = res_id) %>% as_tibble(.)
+
+# Get column names
+names(budget_data)
+```
+
+```{r Prepare data for analysis}
+cols_required <- c('Particulars', 'Actual 2018-2019 Total', 'Revised 2019-2020 Total' ,'Budget 2020-2021 Total')
+data_for_analysis <- budget_data[,cols_required]
+
+#Remove missing values
+data_for_analysis <- data_for_analysis[!is.na(data_for_analysis$Particulars),]
+numeric_fields <- c('Actual 2018-2019 Total','Revised 2019-2020 Total','Budget 2020-2021 Total')
+
+data_for_analysis[,numeric_fields] <- sapply(data_for_analysis[,numeric_fields], as.numeric)
+data_for_analysis[is.na(data_for_analysis)] <- 0 
+data_for_analysis  <- data_for_analysis[(data_for_analysis$`Actual 2018-2019 Total` + data_for_analysis$`Revised 2019-2020 Total` + data_for_analysis$`Budget 2020-2021 Total`) > 0,]
+```
+
+```{r Analysis - Compare the actuals from 2018-19, to the planned budget for 2020-21}
+
 ```
 
