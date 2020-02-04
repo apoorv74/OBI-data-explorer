@@ -1,6 +1,5 @@
 ## Open Budgets India - Data Explorer
 
----
 The objective of this notebook is to demonstrate the exploration of the [OpenBudgetsIndia](openbudgetsindia.org/) (OBI) platform right from our :heart: programming environment, in this case `R`. 
 
 For this use-case we will explore the budget allocation data for the **Ministry of Environment, Forest and Climate Change** :tree: for the year **2020/21**
