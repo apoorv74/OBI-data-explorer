@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-[![](CDL_banner.png)](https://civicdatalab.in/)
+![](assets/image/cdl_primary-logo.png)
 
 ```{r Load Libraries, message=FALSE, warning=FALSE, include=FALSE}
 packages_required <- c("ckanr","stringr","dplyr","DT","listviewer","ggplot2","ggalt")
