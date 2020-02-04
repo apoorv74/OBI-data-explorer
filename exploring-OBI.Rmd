@@ -11,8 +11,20 @@ output:
       collapsed: no
 ---
 
-<br />Last updated: `r format(Sys.time(), '%d %B, %Y')` (See [changelog]()).
+<br /> Last updated: `r format(Sys.time(), '%d %B, %Y')` (See [changelog](https://github.com/apoorv74/OBI-data-explorer/commits/master)).
 
+```{r Report options, include=FALSE}
+# Options for building this document
+knitr::opts_chunk$set(
+  fig.height=5, 
+  fig.width=10, 
+  fig.align='center',
+  message=FALSE,
+  warning=FALSE
+)
+```
+
+[![](CDL_banner.png)](https://civicdatalab.in/)
 
 ```{r Load Libraries, message=FALSE, warning=FALSE, include=FALSE}
 packages_required <- c("ckanr","stringr","dplyr","DT","listviewer","ggplot2","ggalt")
@@ -134,17 +146,8 @@ data_for_analysis <- data_for_analysis[!data_for_analysis$Particulars %in% c('EA
 
 ### Step 7 - Exploring the processed data
 
-```{r Table for exploration, echo=TRUE, message=FALSE, warning=FALSE}
-DT::datatable(data.table::data.table(data_for_analysis), rownames = FALSE,
-    options = list(
-      searching=TRUE, 
-      lengthChange=FALSE, 
-      ordering=FALSE, 
-      autoWidth=TRUE, 
-      bPaginate=TRUE, 
-      bInfo=TRUE, 
-      paging=TRUE
-    ))
+```{r Table for exploration, echo=FALSE, message=FALSE, warning=FALSE}
+DT::datatable(data_for_analysis)
 ```
 
 
@@ -153,15 +156,27 @@ DT::datatable(data.table::data.table(data_for_analysis), rownames = FALSE,
 
 To check how the allocation has changed from 2018-19 to 2020-21:
 
-- Look at the Top and Bottom **20** departments in terms of increase in the budget allocation in this specific period
+Let's check the departments in terms of increase in the budget allocation in this specific period
 
 
-```{r Analysis - Compare the actuals from 2018-19, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+**Top 10 departments with an increase in allocation **
+```{r Analysis - Compare the actuals from 2018-19, echo=FALSE, message=FALSE, warning=FALSE}
 source("utils/helpers.R")
 type_of_graphs <- c('top','bottom')
+
 # lapply(type_of_graphs, prepare_dumbell)
 
 prepare_dumbell('top')
 ```
 
+**Bottom 10 departments in terms of change in allocation of budget**
 
+```{r}
+prepare_dumbell('bottom')
+```
+
+> To be continued ..
+
+---
+
+<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
