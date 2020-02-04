@@ -1,5 +1,5 @@
 ---
-title: "Exploriong budget allocation for the Ministry of Environment, Forests and Climate Change (2020/2021)"
+title: "Exploring budget allocation for the Ministry of Environment, Forests and Climate Change (2020/2021)"
 author: "CivicDataLab"
 output: 
   html_document:
@@ -26,6 +26,9 @@ knitr::opts_chunk$set(
 
 ![](assets/image/cdl_primary-logo.png)
 
+---
+
+### `r emo::ji("notebook")` Why another Notebook ?
 ```{r Load Libraries, message=FALSE, warning=FALSE, include=FALSE}
 packages_required <- c("ckanr","stringr","dplyr","DT","listviewer","ggplot2","ggalt", "emo")
 lapply(packages_required, require, character.only=TRUE)
@@ -33,13 +36,11 @@ lapply(packages_required, require, character.only=TRUE)
 
 The objective of this notebook is to demonstrate the exploration of the [OpenBudgetsIndia](openbudgetsindia.org/) (OBI) platform right from our `r emo::ji("heart")` programming environment, in this case `R`. 
 
-<br /> 
-
 For this use-case we will explore the budget allocation data for the **Ministry of Environment, Forest and Climate Change**  `r emo::ji("tree")` for the year **2020/21**
-
 
 We will use the [ckanr](https://github.com/ropensci/ckanr) package developed by the amazing folks at [ROpenSci](https://ropensci.org/). This is used to read and update data from [CKAN](https://ckan.org/) instanes. Since, OBI is yet another CkAN instance, this packages works perfectly to read and explore (and write as well) data from and to the [Open Budgets India](openbudgetsindia.org/) platform. 
 
+<br /> 
 
 _Note: Please check the [ckanr Github repo](https://github.com/ropensci/ckanr) for documentation and more such examples_
 
