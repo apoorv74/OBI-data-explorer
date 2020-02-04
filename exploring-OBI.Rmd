@@ -6,3 +6,30 @@ output: html_document
 ---
 
 
+Let's explore the Union Budget allocation for the Ministry of Environment, Forests and Climate Change for the year 2020-21
+
+```{r load-libraries}
+library(ckanr)
+library(stringr)
+library(dplyr)
+```
+
+```{r ckan-setup}
+ckanr::ckanr_setup(url = "https://openbudgetsindia.org/")
+
+## Check connection
+ckanr::ckan_version()
+```
+
+```{r explore-organisation}
+ministry_details <- ckanr::organization_show(id = "ministry-of-environment-forests-and-climate-change",include_datasets = TRUE)
+
+## Explore Organisation details
+# listviewer::jsonedit(ministry_details)
+ministry_details$description[[1]] %>% stringr::str_to_sentence() %>% cat()
+```
+
+```{r explore datasets in an org}
+all_datasets <- purrr::map(ministry_details$packages,'title') %>% unlist()
+```
+
