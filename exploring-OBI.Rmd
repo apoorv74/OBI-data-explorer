@@ -17,7 +17,10 @@ The objective of this notebook is to demonstrate the exploration of the [OpenBud
 
 We will use the [ckanr](https://github.com/ropensci/ckanr) package developed by the amazing folks at [ROpenSci](https://ropensci.org/). This is used to read and update data from [CKAN](https://ckan.org/) instanes. Since, OBI is yet another CkAN instance, this packages works perfectly to read and explore (and write as well) data from and to the [Open Budgets India](openbudgetsindia.org/) platform. 
 
-```{r ckan-setup}
+Please check the [ckanr Github repo](https://github.com/ropensci/ckanr) more nuanced documentation and examples
+
+## Step 1 - Connecting to OBI
+```{r ckan-setup, echo=TRUE}
 org_url <- "https://openbudgetsindia.org/"
 ckanr::ckanr_setup(url = org_url)
 org_connect <- ckanr::src_ckan(url = org_url)
@@ -26,7 +29,11 @@ org_connect <- ckanr::src_ckan(url = org_url)
 ckanr::ckan_version()
 ```
 
-```{r explore-organisation}
+## Step 2 - Exploring an organisation
+
+In this exercise, we would like to see the budget allocation for the year 2020-21 within the Ministry of Environment, Forest and Climate Change. Ministries are considered as organisation in OBI, let's see if we can access the description of this organisation
+
+```{r explore-organisation, echo=TRUE}
 ministry_details <- ckanr::organization_show(id = "ministry-of-environment-forests-and-climate-change",include_datasets = TRUE)
 
 ## Explore Organisation details
@@ -34,11 +41,20 @@ ministry_details <- ckanr::organization_show(id = "ministry-of-environment-fores
 ministry_details$description[[1]] %>% stringr::str_to_sentence() %>% cat()
 ```
 
-```{r explore datasets in an org}
+## Step 3 - Exploring datasets present within an organisation
+
+Moving further, let's check the kind of datasets present within this org.
+```{r explore datasets in an org, echo=TRUE}
 all_datasets <- purrr::map(ministry_details$packages,'title') %>% unlist()
 ```
 
-```{r fetch package details}
+This organsiation (or Ministry) has data from 2011/12 right till 2020/21. Since we're interested in the budget allocation for 2020/21, let us now see how we can access the data within this dataset (or a `package`)
+
+## Step 4 - Viewing a package
+
+A package (or a dataset) contains several files within. For this analysis, we would like to get access to the tabular datasets or a **CSV** which has allocation details for several important budget heads. 
+
+```{r fetch package details, echo=TRUE}
 
 # Get the package ID
 data_2020_id <- ministry_details$packages[[1]]$id
@@ -53,7 +69,17 @@ format_details <- purrr::map_df(pacakage_details$resources,`[`,c('format','id'))
 print(format_details)
 ```
 
-```{r get data from resource}
+Note: All three formats can be accessed in a similar way. We shall fetch the `ID` of a particular file (or a `resource`) which will then be used for reading contents.
+
+## Step 5 - Reading data from a file
+
+Data can easily be exported as a data frame which is a suitable format for analysing this data. 
+
+`ckanr implements a dplyr SQL interface to CKAN's datastore. You can access any resource in the datastore directly using only the CKAN resource ID.
+Note: this will only work for resources which were uploaded successfully to the datastore - they will show the green "Data API" button in CKAN.
+`
+
+```{r get data from resource, message=FALSE, warning=FALSE}
 # Get data from CSV
 res_id <- format_details$id[format_details$format == 'CSV']
 # budget_data <- dplyr::tbl(src = org_connect$con, from = res_id) %>% as_tibble(.)
@@ -65,19 +91,24 @@ budget_data <- readr::read_csv("data/ministry-of-environment-forests-and-climate
 names(budget_data)
 ```
 
-```{r Prepare data for analysis}
+## Step 6 - Preparing the data for analysis
+
+For this analysis, we would like to see the change in allocation from the financial year 2018/19 to 2020/21. To prepare this dataset:
+
+- Remove missing values
+   - Remove rows with missing value for 'Particulars' col
+   - Convert the budget cols to numeric
+   - Convert NA to 0 in budget cols
+   - Remove rows where the sum of all budget cols is 0
+- Remove whitespaces from the 'Particulars' col
+- Remove the Grand Total Columns
+- Add the `Budget difference` column which is calulated as the difference of `Budget 2020-2021 Total` and `Actual 2018-2019 Total`
+
+```{r Prepare data for analysis, echo=TRUE, message=FALSE, warning=FALSE}
 cols_required <- c('Particulars', 'Actual 2018-2019 Total', 'Revised 2019-2020 Total' ,'Budget 2020-2021 Total')
 data_for_analysis <- budget_data[,cols_required]
 
 # Clean it a bit .. 
-
-# Remove missing values
-#   - Remove rows with missing value for 'Particulars' col
-#   - Convert the budget cols to numeric
-#   - Convert NA to 0 in budget cols
-#   - Remove rows where the sum of all budget cols is 0
-# Remove whitespaces from the 'Particulars' col
-# Remove the Grand Total Columns
 data_for_analysis <- data_for_analysis[!is.na(data_for_analysis$Particulars),]
 numeric_fields <- c('Actual 2018-2019 Total','Revised 2019-2020 Total','Budget 2020-2021 Total')
 data_for_analysis[,numeric_fields] <- sapply(data_for_analysis[,numeric_fields], as.numeric)
@@ -90,10 +121,11 @@ data_for_analysis <- data_for_analysis[!data_for_analysis$Particulars %in% c('Gr
 data_for_analysis$`Budget Difference` <- data_for_analysis$`Budget 2020-2021 Total` - data_for_analysis$`Actual 2018-2019 Total`
 ```
 
-```{r Table for exploration}
+## Step 7 - Exploring the processed data
+
+```{r Table for exploration, echo=TRUE, message=FALSE, warning=FALSE}
 DT::datatable(data.table::data.table(data_for_analysis), rownames = FALSE,
     options = list(
-      DT::
       searching=TRUE, 
       lengthChange=FALSE, 
       ordering=FALSE, 
@@ -105,15 +137,21 @@ DT::datatable(data.table::data.table(data_for_analysis), rownames = FALSE,
 ```
 
 
-Let's check how the allocation has changed from 2018-19 to 2020-21. 
+## Step 8 - Further exploration
 
-```{r Analysis - Compare the actuals from 2018-19, to the planned budget for 2020-21}
+
+To check how the allocation has changed from 2018-19 to 2020-21:
+
+- Look at the top and bottom20 departments in terms of increase in the budget allocation in this specific period
+
+
+```{r Analysis - Compare the actuals from 2018-19, echo=TRUE}
 top_20_gain <- data_for_analysis %>% arrange(`Budget Difference`) %>% tail(20)
 bottom_20_loss <- data_for_analysis %>% arrange(`Budget Difference`) %>% head(20) 
 ```
 
 
-```{r Graph for top 20 - Gain}
+```{r Graph for top 20 - Gain, echo=FALSE, message=FALSE, warning=FALSE}
 graph_for_analysis <- top_20_gain
 graph_for_analysis$Particulars <- factor(graph_for_analysis$Particulars, levels = graph_for_analysis$Particulars)
 top_20 <- ggplot(graph_for_analysis, aes(x=`Actual 2018-2019 Total`, xend=`Budget 2020-2021 Total`, y=Particulars, group=Particulars)) + 
@@ -138,7 +176,7 @@ top_20 <- ggplot(graph_for_analysis, aes(x=`Actual 2018-2019 Total`, xend=`Budge
 top_20
 ```
 
-```{r Graph for bottom 20 - Loss}
+```{r Graph for bottom 20 - Loss, echo=FALSE, message=FALSE, warning=FALSE}
 graph_for_analysis <- bottom_20_loss
 graph_for_analysis$Particulars <- factor(graph_for_analysis$Particulars, levels = graph_for_analysis$Particulars)
 bottom_20 <- ggplot(graph_for_analysis, aes(x=`Actual 2018-2019 Total`, xend=`Budget 2020-2021 Total`, y=Particulars, group=Particulars)) + 
@@ -162,3 +200,5 @@ bottom_20 <- ggplot(graph_for_analysis, aes(x=`Actual 2018-2019 Total`, xend=`Bu
               panel.border=element_blank())
 bottom_20
 ```
+
+
