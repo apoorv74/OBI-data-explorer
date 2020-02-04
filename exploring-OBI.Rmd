@@ -103,6 +103,7 @@ For this analysis, we would like to see the change in allocation from the financ
 - Remove whitespaces from the 'Particulars' col
 - Remove the Grand Total Columns
 - Add the `Budget difference` column which is calulated as the difference of `Budget 2020-2021 Total` and `Actual 2018-2019 Total`
+- Remove `EAP Component` as it is repeating multiple times in the Particulars col (Why is this happening ?) 
 
 ```{r Prepare data for analysis, echo=TRUE, message=FALSE, warning=FALSE}
 cols_required <- c('Particulars', 'Actual 2018-2019 Total', 'Revised 2019-2020 Total' ,'Budget 2020-2021 Total')
@@ -119,6 +120,9 @@ data_for_analysis <- data_for_analysis[!data_for_analysis$Particulars %in% c('Gr
 
 # Add new column for the difference in budget from 2018-19 to 2021-21
 data_for_analysis$`Budget Difference` <- data_for_analysis$`Budget 2020-2021 Total` - data_for_analysis$`Actual 2018-2019 Total`
+
+# Removing EAP Component
+data_for_analysis <- data_for_analysis[!data_for_analysis$Particulars %in% c('EAP Component'),]
 ```
 
 ## Step 7 - Exploring the processed data
@@ -142,63 +146,13 @@ DT::datatable(data.table::data.table(data_for_analysis), rownames = FALSE,
 
 To check how the allocation has changed from 2018-19 to 2020-21:
 
-- Look at the top and bottom20 departments in terms of increase in the budget allocation in this specific period
+- Look at the Top and Bottom **20** departments in terms of increase in the budget allocation in this specific period
 
 
-```{r Analysis - Compare the actuals from 2018-19, echo=TRUE}
-top_20_gain <- data_for_analysis %>% arrange(`Budget Difference`) %>% tail(20)
-bottom_20_loss <- data_for_analysis %>% arrange(`Budget Difference`) %>% head(20) 
-```
-
-
-```{r Graph for top 20 - Gain, echo=FALSE, message=FALSE, warning=FALSE}
-graph_for_analysis <- top_20_gain
-graph_for_analysis$Particulars <- factor(graph_for_analysis$Particulars, levels = graph_for_analysis$Particulars)
-top_20 <- ggplot(graph_for_analysis, aes(x=`Actual 2018-2019 Total`, xend=`Budget 2020-2021 Total`, y=Particulars, group=Particulars)) + 
-        geom_dumbbell(color="#0e668b", 
-                      size=0.75, 
-                      point.colour.l="#0e668b") + 
-        scale_x_continuous() + 
-        labs(x=NULL, 
-             y=NULL, 
-             title="Budget Allocation (In Crores): 2018/19 vs 2020/21", 
-             subtitle="Top 20 departments in terms of increase in budget allocation", 
-             caption="Source: OpenBudgetsIndia") +
-        theme(plot.title = element_text(hjust=0.5, face="bold"),
-              plot.background=element_rect(fill="#f7f7f7"),
-              panel.background=element_rect(fill="#f7f7f7"),
-              panel.grid.minor=element_blank(),
-              panel.grid.major.y=element_blank(),
-              panel.grid.major.x=element_line(),
-              axis.ticks=element_blank(),
-              legend.position="top",
-              panel.border=element_blank())
-top_20
-```
-
-```{r Graph for bottom 20 - Loss, echo=FALSE, message=FALSE, warning=FALSE}
-graph_for_analysis <- bottom_20_loss
-graph_for_analysis$Particulars <- factor(graph_for_analysis$Particulars, levels = graph_for_analysis$Particulars)
-bottom_20 <- ggplot(graph_for_analysis, aes(x=`Actual 2018-2019 Total`, xend=`Budget 2020-2021 Total`, y=Particulars, group=Particulars)) + 
-        geom_dumbbell(color="#0e668b", 
-                      size=0.75, 
-                      point.colour.l="#0e668b") + 
-        scale_x_continuous() + 
-        labs(x=NULL, 
-             y=NULL, 
-             title="Budget Allocation (In Crores): 2018/19 vs 2020/21", 
-             subtitle="Bottom 20 departments in terms of increase in budget allocation", 
-             caption="Source: OpenBudgetsIndia") +
-        theme(plot.title = element_text(hjust=0.5, face="bold"),
-              plot.background=element_rect(fill="#f7f7f7"),
-              panel.background=element_rect(fill="#f7f7f7"),
-              panel.grid.minor=element_blank(),
-              panel.grid.major.y=element_blank(),
-              panel.grid.major.x=element_line(),
-              axis.ticks=element_blank(),
-              legend.position="top",
-              panel.border=element_blank())
-bottom_20
+```{r Analysis - Compare the actuals from 2018-19, echo=TRUE, message=FALSE, warning=FALSE}
+source("utils/helpers.R")
+type_of_graphs <- c('top','bottom')
+lapply(type_of_graphs, prepare_dumbell)
 ```
 
 
