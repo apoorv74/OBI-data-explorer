@@ -1,8 +1,8 @@
 prepare_dumbell <- function(graph_type){
   if(graph_type == 'top'){
-    data_for_graph <- data_for_analysis %>% arrange(`Budget Difference`) %>% tail(20)  
+    data_for_graph <- data_for_analysis %>% arrange(`Budget Difference`) %>% tail(10)  
   } else {
-    data_for_graph <- data_for_analysis %>% arrange(`Budget Difference`) %>% head(20)   
+    data_for_graph <- data_for_analysis %>% arrange(`Budget Difference`) %>% head(10)   
   }
   
   graph_for_analysis <- data_for_graph

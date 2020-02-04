@@ -1,14 +1,20 @@
 ---
-title: "OBI - Data (& Platform) Explorer"
+title: "Exploriong budget allocation for the Ministry of Environment, Forests and Climate Change (2020/2021)"
 author: "CivicDataLab"
-date: "04/02/2020"
-output: html_document
+output: 
+  html_document:
+    df_print: default
+    number_sections: no
+    self_contained: no
+    toc: yes
+    toc_float:
+      collapsed: no
 ---
 
+<br />Last updated: `r format(Sys.time(), '%d %B, %Y')` (See [changelog]()).
 
-## Exploring the Union Budget allocation for the Ministry of Environment, Forests and Climate Change** for the year 2020-21
 
-```{r Load Libraries, echo=FALSE, warning=TRUE}
+```{r Load Libraries, message=FALSE, warning=FALSE, include=FALSE}
 packages_required <- c("ckanr","stringr","dplyr","DT","listviewer","ggplot2","ggalt")
 lapply(packages_required, require, character.only=TRUE)
 ```
@@ -19,42 +25,43 @@ We will use the [ckanr](https://github.com/ropensci/ckanr) package developed by 
 
 Please check the [ckanr Github repo](https://github.com/ropensci/ckanr) more nuanced documentation and examples
 
-## Step 1 - Connecting to OBI
-```{r ckan-setup, echo=TRUE}
+### Step 1 - Connecting to OBI
+```{r ckan-setup, echo=TRUE, message=FALSE, warning=FALSE}
 org_url <- "https://openbudgetsindia.org/"
 ckanr::ckanr_setup(url = org_url)
 org_connect <- ckanr::src_ckan(url = org_url)
 
-## Check connection
+### Check connection
 ckanr::ckan_version()
 ```
 
-## Step 2 - Exploring an organisation
+### Step 2 - Exploring an organisation
 
 In this exercise, we would like to see the budget allocation for the year 2020-21 within the Ministry of Environment, Forest and Climate Change. Ministries are considered as organisation in OBI, let's see if we can access the description of this organisation
 
-```{r explore-organisation, echo=TRUE}
+```{r explore-organisation, echo=TRUE, message=FALSE, warning=FALSE}
 ministry_details <- ckanr::organization_show(id = "ministry-of-environment-forests-and-climate-change",include_datasets = TRUE)
 
-## Explore Organisation details
+### Explore Organisation details
 # listviewer::jsonedit(ministry_details)
 ministry_details$description[[1]] %>% stringr::str_to_sentence() %>% cat()
 ```
 
-## Step 3 - Exploring datasets present within an organisation
+### Step 3 - Exploring datasets present within an organisation
 
 Moving further, let's check the kind of datasets present within this org.
-```{r explore datasets in an org, echo=TRUE}
+```{r explore datasets in an org, echo=TRUE, message=FALSE, warning=FALSE}
 all_datasets <- purrr::map(ministry_details$packages,'title') %>% unlist()
+all_datasets
 ```
 
 This organsiation (or Ministry) has data from 2011/12 right till 2020/21. Since we're interested in the budget allocation for 2020/21, let us now see how we can access the data within this dataset (or a `package`)
 
-## Step 4 - Viewing a package
+### Step 4 - Viewing a package
 
 A package (or a dataset) contains several files within. For this analysis, we would like to get access to the tabular datasets or a **CSV** which has allocation details for several important budget heads. 
 
-```{r fetch package details, echo=TRUE}
+```{r fetch package details, echo=TRUE, message=FALSE, warning=FALSE}
 
 # Get the package ID
 data_2020_id <- ministry_details$packages[[1]]$id
@@ -71,7 +78,7 @@ print(format_details)
 
 Note: All three formats can be accessed in a similar way. We shall fetch the `ID` of a particular file (or a `resource`) which will then be used for reading contents.
 
-## Step 5 - Reading data from a file
+### Step 5 - Reading data from a file
 
 Data can easily be exported as a data frame which is a suitable format for analysing this data. 
 
@@ -91,7 +98,7 @@ budget_data <- readr::read_csv("data/ministry-of-environment-forests-and-climate
 names(budget_data)
 ```
 
-## Step 6 - Preparing the data for analysis
+### Step 6 - Preparing the data for analysis
 
 For this analysis, we would like to see the change in allocation from the financial year 2018/19 to 2020/21. To prepare this dataset:
 
@@ -125,7 +132,7 @@ data_for_analysis$`Budget Difference` <- data_for_analysis$`Budget 2020-2021 Tot
 data_for_analysis <- data_for_analysis[!data_for_analysis$Particulars %in% c('EAP Component'),]
 ```
 
-## Step 7 - Exploring the processed data
+### Step 7 - Exploring the processed data
 
 ```{r Table for exploration, echo=TRUE, message=FALSE, warning=FALSE}
 DT::datatable(data.table::data.table(data_for_analysis), rownames = FALSE,
@@ -141,7 +148,7 @@ DT::datatable(data.table::data.table(data_for_analysis), rownames = FALSE,
 ```
 
 
-## Step 8 - Further exploration
+### Step 8 - Further exploration
 
 
 To check how the allocation has changed from 2018-19 to 2020-21:
@@ -149,10 +156,12 @@ To check how the allocation has changed from 2018-19 to 2020-21:
 - Look at the Top and Bottom **20** departments in terms of increase in the budget allocation in this specific period
 
 
-```{r Analysis - Compare the actuals from 2018-19, echo=TRUE, message=FALSE, warning=FALSE}
+```{r Analysis - Compare the actuals from 2018-19, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 source("utils/helpers.R")
 type_of_graphs <- c('top','bottom')
-lapply(type_of_graphs, prepare_dumbell)
+# lapply(type_of_graphs, prepare_dumbell)
+
+prepare_dumbell('top')
 ```
 
 
