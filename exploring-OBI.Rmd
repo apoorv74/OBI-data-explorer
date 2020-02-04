@@ -63,13 +63,25 @@ names(budget_data)
 cols_required <- c('Particulars', 'Actual 2018-2019 Total', 'Revised 2019-2020 Total' ,'Budget 2020-2021 Total')
 data_for_analysis <- budget_data[,cols_required]
 
-#Remove missing values
+# Clean it a bit .. 
+
+# Remove missing values
+#   - Remove rows with missing value for 'Particulars' col
+#   - Convert the budget cols to numeric
+#   - Convert NA to 0 in budget cols
+#   - Remove rows where the sum of all budget cols is 0
+# Remove whitespaces from the 'Particulars' col
+# Remove the Grand Total Columns
 data_for_analysis <- data_for_analysis[!is.na(data_for_analysis$Particulars),]
 numeric_fields <- c('Actual 2018-2019 Total','Revised 2019-2020 Total','Budget 2020-2021 Total')
-
 data_for_analysis[,numeric_fields] <- sapply(data_for_analysis[,numeric_fields], as.numeric)
 data_for_analysis[is.na(data_for_analysis)] <- 0 
 data_for_analysis  <- data_for_analysis[(data_for_analysis$`Actual 2018-2019 Total` + data_for_analysis$`Revised 2019-2020 Total` + data_for_analysis$`Budget 2020-2021 Total`) > 0,]
+data_for_analysis$Particulars <- stringr::str_trim(data_for_analysis$Particulars)
+data_for_analysis <- data_for_analysis[!data_for_analysis$Particulars %in% c('Grand Total'),]
+
+# Add new column for the difference in budget from 2018-19 to 2021-21
+data_for_analysis$budget_diff <- data_for_analysis$`Budget 2020-2021 Total` - data_for_analysis$`Actual 2018-2019 Total`
 ```
 
 ```{r Analysis - Compare the actuals from 2018-19, to the planned budget for 2020-21}
